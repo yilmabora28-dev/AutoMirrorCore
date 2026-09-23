@@ -1,0 +1,16 @@
+#!/bin/sh
+# Gradle wrapper bootstrap script
+# This is a minimal wrapper — in a real project, generate with: gradle wrapper
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_HOME="$DIR"
+
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+WRAPPER_PROPERTIES="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
+
+if [ ! -f "$CLASSPATH" ]; then
+    echo "gradle-wrapper.jar not found. Run 'gradle wrapper' to generate it."
+    exit 1
+fi
+
+exec java -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
