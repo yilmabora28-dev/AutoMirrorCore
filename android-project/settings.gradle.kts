@@ -11,9 +11,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://maven.pkg.github.com/nickthecoder/android-car-app") {
-            credentials { /* public read */ }
-        }
     }
 }
 
