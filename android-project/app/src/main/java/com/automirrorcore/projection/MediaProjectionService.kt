@@ -24,6 +24,7 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Surface
 import android.view.WindowManager
+import com.automirrorcore.app.R
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +46,7 @@ class MediaProjectionService : Service() {
         const val EXTRA_DIRECT_SURFACE = "direct_surface"
 
         val projectionState: StateFlow<ProjectionState> get() = _projectionState
-        private val _projectionState = MutableStateFlow(ProjectionState.Idle)
+        private val _projectionState = MutableStateFlow<ProjectionState>(ProjectionState.Idle)
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -223,7 +224,7 @@ class MediaProjectionService : Service() {
             .build()
 
     private fun acquireWakeLock() {
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(
             PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
             "AutoMirrorCore::ProjectionWakeLock"
