@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
     paths:
       - 'android-project/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main, master ]
     paths:
@@ -28,11 +29,17 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.9'
+
+      - name: Generate Gradle Wrapper
+        working-directory: android-project
+        run: gradle wrapper --gradle-version 8.9
 
       - name: Build Debug APK
         working-directory: android-project
         run: |
-          chmod +x gradlew || true
+          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
