@@ -1,17 +1,26 @@
 package com.automirrorcore.aa
 
 import android.content.Intent
+import android.graphics.Rect
 import android.util.Log
 import android.view.Surface
+import androidx.car.app.AppManager
 import androidx.car.app.CarAppService
-import androidx.car.app.SessionInfo
+import androidx.car.app.CarContext
 import androidx.car.app.Screen
+import androidx.car.app.Session
+import androidx.car.app.SessionInfo
+import androidx.car.app.SurfaceCallback
+import androidx.car.app.SurfaceContainer
+import androidx.car.app.model.Action
+import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
-import androidx.car.app.SurfaceCallback
+import androidx.car.app.validation.HostValidator
 import com.automirrorcore.input.CoordinateTransformer
-import com.automirrorcore.input.TouchInjectorFactory
 import com.automirrorcore.input.TouchAccessibilityService
+import com.automirrorcore.input.TouchInjector
+import com.automirrorcore.input.TouchInjectorFactory
 import com.automirrorcore.projection.MediaProjectionService
 
 class AutoCarAppService : CarAppService() {
@@ -20,36 +29,33 @@ class AutoCarAppService : CarAppService() {
         private const val TAG = "AutoCarAppService"
     }
 
-    override fun onCarConfigurationChanged() {
-        Log.i(TAG, "Car configuration changed")
-    }
+    override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
-    override fun onCreateSession(sessionInfo: SessionInfo): androidx.car.app.Session {
+    override fun onCreateSession(sessionInfo: SessionInfo): Session {
         Log.i(TAG, "onCreateSession")
         return MirrorSession()
     }
 
-    private inner class MirrorSession : androidx.car.app.Session() {
-
-        private var touchInjector = TouchInjectorFactory.create(
+    private inner class MirrorSession : Session() {
+        private var touchInjector: TouchInjector = TouchInjectorFactory.create(
             TouchAccessibilityService.instance
         )
-
         private var transform: CoordinateTransformer.Transform? = null
 
         private val surfaceCallback = object : SurfaceCallback {
-
-            override fun onSurfaceAvailable(surface: Surface) {
+            override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
                 Log.i(TAG, "Car Surface available")
-                startProjectionToCar(surface)
+                startProjectionToCar(surfaceContainer.surface)
             }
 
-            override fun onSurfaceDestroyed() {
+            override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
                 Log.i(TAG, "Car Surface destroyed")
-                carContext.stopService(
-                    Intent(carContext, MediaProjectionService::class.java)
-                )
+                carContext.stopService(Intent(carContext, MediaProjectionService::class.java))
             }
+
+            override fun onVisibleAreaChanged(visibleArea: Rect) = Unit
+
+            override fun onStableAreaChanged(stableArea: Rect) = Unit
 
             override fun onClick(x: Float, y: Float) {
                 val t = transform ?: return
@@ -65,17 +71,16 @@ class AutoCarAppService : CarAppService() {
                 val t = transform ?: return
                 val cx = t.carWidth / 2f
                 val cy = t.carHeight / 2f
-                val endX = (cx - velocityX * 0.3f).coerceIn(0f, t.phoneWidth.toFloat())
-                val endY = (cy - velocityY * 0.3f).coerceIn(0f, t.phoneHeight.toFloat())
+                val endX = (cx - velocityX * 0.3f).coerceIn(0f, t.carWidth.toFloat())
+                val endY = (cy - velocityY * 0.3f).coerceIn(0f, t.carHeight.toFloat())
                 touchInjector.swipe(listOf(cx to cy, endX to endY), 200L)
             }
         }
 
         override fun onCreateScreen(screenIntent: Intent): Screen {
-            touchInjector = TouchInjectorFactory.create(
-                TouchAccessibilityService.instance
-            )
-            return MirrorScreen(carContext, surfaceCallback)
+            touchInjector = TouchInjectorFactory.create(TouchAccessibilityService.instance)
+            carContext.getCarService(AppManager::class.java).setSurfaceCallback(surfaceCallback)
+            return MirrorScreen(carContext)
         }
 
         private fun startProjectionToCar(surface: Surface) {
@@ -87,8 +92,7 @@ class AutoCarAppService : CarAppService() {
                 phoneHeight = phoneH,
                 carWidth = 1920,
                 carHeight = 1080,
-                orientation = CoordinateTransformer.Transform
-                    .Orientation.PORTRAIT_TO_LANDSCAPE
+                orientation = CoordinateTransformer.Transform.Orientation.PORTRAIT_TO_LANDSCAPE
             )
 
             val intent = Intent(carContext, MediaProjectionService::class.java).apply {
@@ -102,20 +106,9 @@ class AutoCarAppService : CarAppService() {
         }
     }
 
-    private class MirrorScreen(
-        context: androidx.car.app.CarContext,
-        private val surfaceCallback: SurfaceCallback
-    ) : Screen(context) {
-
-        override fun onGetTemplate(): Template {
-            return NavigationTemplate.Builder()
-                .setSurfaceCallback(surfaceCallback)
-                .setMapActionStrip(
-                    androidx.car.app.model.ActionStrip.Builder()
-                        .addAction(androidx.car.app.model.Action.PAN)
-                        .build()
-                )
-                .build()
-        }
+    private class MirrorScreen(carContext: CarContext) : Screen(carContext) {
+        override fun onGetTemplate(): Template = NavigationTemplate.Builder()
+            .setMapActionStrip(ActionStrip.Builder().addAction(Action.PAN).build())
+            .build()
     }
 }

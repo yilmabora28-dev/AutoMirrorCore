@@ -9,8 +9,6 @@ import android.view.MotionEvent
 import android.view.accessibility.AccessibilityEvent
 import kotlin.math.roundToInt
 
-// ── Strategy Interface ──────────────────────────────────
-
 interface TouchInjector {
     val isAvailable: Boolean
     fun tap(x: Float, y: Float): Boolean
@@ -19,8 +17,6 @@ interface TouchInjector {
         throw UnsupportedOperationException("Raw injection not supported by ${javaClass.simpleName}")
     }
 }
-
-// ── Coordinate Transformer ────────────────────────────
 
 object CoordinateTransformer {
 
@@ -66,8 +62,6 @@ object CoordinateTransformer {
     }
 }
 
-// ── Engine 1: Accessibility ─────────────────────────
-
 class AccessibilityTouchInjector(
     private val service: AccessibilityService
 ) : TouchInjector {
@@ -80,7 +74,7 @@ class AccessibilityTouchInjector(
         val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
         val gesture = GestureDescription.Builder().addStroke(stroke).build()
 
-        return service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback {
+        return service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
             override fun onCompleted(g: GestureDescription?) {}
             override fun onCancelled(g: GestureDescription?) {
                 Log.w("ATI", "Gesture cancelled at ($x, $y)")
@@ -101,7 +95,7 @@ class AccessibilityTouchInjector(
         val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
         val gesture = GestureDescription.Builder().addStroke(stroke).build()
 
-        return service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback {
+        return service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
             override fun onCompleted(g: GestureDescription?) {
                 Log.d("ATI", "Swipe completed (${points.size} pts)")
             }
@@ -111,8 +105,6 @@ class AccessibilityTouchInjector(
         }, handler)
     }
 }
-
-// ── Engine 2: Shizuku / Root ───────────────────────
 
 class ShizukuTouchInjector : TouchInjector {
 
@@ -164,12 +156,10 @@ class ShizukuTouchInjector : TouchInjector {
     ): MotionEvent {
         val eventTime = android.os.SystemClock.uptimeMillis()
         return MotionEvent.obtain(
-            downTime, eventTime, action, x, y, 0, 1f, 1f, 1f, 1f, 0, 0
+            downTime, eventTime, action, x, y, 0, 1f, 1f, 0, 0, 0, 0
         )
     }
 }
-
-// ── Factory ─────────────────────────────────────────
 
 object TouchInjectorFactory {
     fun create(accessibilityService: AccessibilityService?): TouchInjector {
