@@ -31,14 +31,14 @@ jobs:
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip -d /opt/
-          echo "/opt/gradle-8.9/bin" >> $GITHUB_PATH
+          echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Verify Gradle
         run: gradle --version
 
       - name: Build Debug APK
         working-directory: android-project
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --no-parallel --max-workers=2 --console=plain --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Release APK
         working-directory: android-project
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease --no-daemon --no-parallel --max-workers=2 --console=plain --stacktrace
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
