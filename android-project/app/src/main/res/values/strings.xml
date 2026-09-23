@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AutoMirrorCore</string>
+    <string name="accessibility_description">Enables touch injection for Android Auto screen mirroring. Allows the app to simulate taps and swipes on your phone screen from the car display.</string>
+    <string name="projection_channel_name">Screen Projection</string>
+    <string name="projection_channel_desc">Mirroring screen to Android Auto</string>
+    <string name="projection_notif_title">AutoMirrorCore</string>
+    <string name="projection_notif_text">Screen mirroring active — touch injection enabled</string>
+</resources>
